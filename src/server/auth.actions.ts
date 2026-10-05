@@ -3,17 +3,14 @@ import { createServerFn } from "@tanstack/react-start";
 let localDbInstance: any = null;
 
 async function getDB() {
-  console.log("getDB called in env:", process.env.NODE_ENV);
   // @ts-ignore
   if (typeof globalThis.DB !== 'undefined') {
-    console.log("Using globalThis.DB");
     return globalThis.DB;
   }
   
   if (process.env.NODE_ENV === 'development') {
     if (localDbInstance) return localDbInstance;
     
-    console.log("Loading better-sqlite3 using import...");
     try {
       const { createRequire } = await import('module');
       const require = createRequire(import.meta.url);
@@ -27,7 +24,6 @@ async function getDB() {
       if (files.length === 0) throw new Error("Local D1 database not found");
       
       const dbPath = path.join(dir, files[0]);
-      console.log("Connecting to local DB at:", dbPath);
       const db = new Database(dbPath);
       
       localDbInstance = {
@@ -45,7 +41,6 @@ async function getDB() {
       };
       return localDbInstance;
     } catch (err) {
-      console.error("Error in getDB fallback:", err);
       throw err;
     }
   }
@@ -75,26 +70,28 @@ export const loginFn = createServerFn({ method: "POST" })
       const isValid = await verifyPassword(password, userRecord.password_hash as string);
       if (!isValid) return { error: "Usuario o contraseña incorrectos" };
 
-      await createSession(userRecord.id as string, userRecord.role as string, userRecord.employee_number as string);
-      return { success: true, user: { id: userRecord.id, role: userRecord.role, employeeNumber: userRecord.employee_number } };
+      const token = await createSession(userRecord.id as string, userRecord.role as string, userRecord.employee_number as string);
+      return { success: true, token, user: { id: userRecord.id, role: userRecord.role, employeeNumber: userRecord.employee_number } };
     } catch (error) {
       console.error("loginFn crashed:", error);
-      throw error;
+      return { error: "Error interno del servidor" };
     }
   });
 
 export const logoutFn = createServerFn({ method: "POST" })
   .handler(async () => {
-    const { destroySession } = await import("./auth.server");
-    await destroySession();
     return { success: true };
   });
 
-export const getUserFn = createServerFn({ method: "GET" })
-  .handler(async () => {
+export const getUserFn = createServerFn({ method: "POST" })
+  .handler(async (ctx) => {
     try {
+      const payload = ctx.data as any;
+      const { token } = payload;
+      if (!token) return null;
+
       const { getSession } = await import("./auth.server");
-      const session = await getSession();
+      const session = await getSession(token);
       if (!session) return null;
 
       const DB = await getDB();
@@ -120,6 +117,6 @@ export const getUserFn = createServerFn({ method: "GET" })
       };
     } catch (error) {
       console.error("getUserFn crashed:", error);
-      throw error;
+      return null;
     }
   });

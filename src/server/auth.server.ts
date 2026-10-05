@@ -1,6 +1,5 @@
 import { SignJWT, jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
-import { getCookie, setCookie, deleteCookie } from "vinxi/http";
 
 const JWT_SECRET = new TextEncoder().encode("SUPER_SECRET_KEY_REPLACE_ME_IN_PROD_12345");
 
@@ -19,22 +18,10 @@ export async function createSession(userId: string, role: string, employeeNumber
     .setIssuedAt()
     .setExpirationTime("7d")
     .sign(JWT_SECRET);
-
-  setCookie("plenum_session", token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 7, // 7 days
-  });
+  return token;
 }
 
-export async function destroySession() {
-  deleteCookie("plenum_session");
-}
-
-export async function getSession() {
-  const token = getCookie("plenum_session");
+export async function getSession(token: string) {
   if (!token) return null;
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);

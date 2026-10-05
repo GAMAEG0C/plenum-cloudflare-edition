@@ -1,5 +1,5 @@
 import { createContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { loginFn, logoutFn, getUserFn } from "@/server/auth.actions";
+import { loginFn, getUserFn } from "@/server/auth.actions";
 
 export type AppRole = "admin" | "manager" | "médico" | "auxiliar" | "empleado" | "recepción";
 
@@ -33,12 +33,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loadProfile = async () => {
     try {
-      const data = await getUserFn();
+      const token = localStorage.getItem('plenum_token');
+      if (!token) {
+        setUser(null);
+        setEmployee(null);
+        setRole(null);
+        setLoading(false);
+        return;
+      }
+
+      const data = await getUserFn({ data: { token } });
       if (data) {
         setUser(data.user);
         setEmployee(data.employee as EmployeeProfile);
         setRole(data.role as AppRole);
       } else {
+        localStorage.removeItem('plenum_token');
         setUser(null);
         setEmployee(null);
         setRole(null);
@@ -59,6 +69,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const result = await loginFn({ data: { employeeNumber: empNumber.trim(), password } });
       if (result.error) return { error: result.error };
       
+      if (result.token) {
+        localStorage.setItem('plenum_token', result.token);
+      }
+      
       await loadProfile();
       return { error: null };
     } catch (e) {
@@ -67,7 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    await logoutFn();
+    localStorage.removeItem('plenum_token');
     setUser(null);
     setEmployee(null);
     setRole(null);
