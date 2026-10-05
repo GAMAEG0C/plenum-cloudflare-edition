@@ -1,17 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
+import { getEvent } from "vinxi/http";
 
 let localDbInstance: any = null;
 
 async function getDB() {
-  // @ts-ignore
-  if (typeof globalThis.DB !== 'undefined') return globalThis.DB;
-  
-  // @ts-ignore
-  if (typeof process !== 'undefined' && process.env && process.env.DB) return process.env.DB;
+  const event = getEvent();
+  const env = event?.context?.cloudflare?.env;
+  if (env && env.DB) {
+    return env.DB;
+  }
 
-  // @ts-ignore
-  if (typeof globalThis.__env__ !== 'undefined' && globalThis.__env__.DB) return globalThis.__env__.DB;
-
+  // Fallback para Vite Dev Server (localhost)
   if (process.env.NODE_ENV === 'development') {
     if (localDbInstance) return localDbInstance;
     
@@ -58,9 +57,8 @@ export const loginFn = createServerFn({ method: "POST" })
       const payload = ctx.data as any;
       const { employeeNumber, password } = payload;
       
-      const { verifyPassword, createSession } = await import("./auth.server");
-      
       const DB = await getDB();
+      const { verifyPassword, createSession } = await import("./auth.server");
 
       const userRecord = await DB.prepare(`
         SELECT u.id, u.password_hash, u.role, e.employee_number, e.status 
@@ -101,11 +99,11 @@ export const getUserFn = createServerFn({ method: "POST" })
       const { token } = payload;
       if (!token) return null;
 
+      const DB = await getDB();
       const { getSession } = await import("./auth.server");
       const session = await getSession(token);
       if (!session) return null;
 
-      const DB = await getDB();
       const userRecord = await DB.prepare(`
         SELECT u.id, u.role, e.employee_number, e.first_name, e.last_name, e.status 
         FROM users u 
