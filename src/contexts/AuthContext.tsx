@@ -94,4 +94,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-export const EMPLOYEE_NUMBER_REGEX = /^[A-Z]{2}\d{4}$/;
+export const EMPLOYEE_NUMBER_REGEX = /^[A-Z-]+\d+$/;
