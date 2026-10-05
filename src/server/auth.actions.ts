@@ -4,10 +4,14 @@ let localDbInstance: any = null;
 
 async function getDB() {
   // @ts-ignore
-  if (typeof globalThis.DB !== 'undefined') {
-    return globalThis.DB;
-  }
+  if (typeof globalThis.DB !== 'undefined') return globalThis.DB;
   
+  // @ts-ignore
+  if (typeof process !== 'undefined' && process.env && process.env.DB) return process.env.DB;
+
+  // @ts-ignore
+  if (typeof globalThis.__env__ !== 'undefined' && globalThis.__env__.DB) return globalThis.__env__.DB;
+
   if (process.env.NODE_ENV === 'development') {
     if (localDbInstance) return localDbInstance;
     
@@ -53,6 +57,7 @@ export const loginFn = createServerFn({ method: "POST" })
     try {
       const payload = ctx.data as any;
       const { employeeNumber, password } = payload;
+      
       const { verifyPassword, createSession } = await import("./auth.server");
       
       const DB = await getDB();
@@ -64,10 +69,16 @@ export const loginFn = createServerFn({ method: "POST" })
         WHERE e.employee_number = ?
       `).bind(employeeNumber).first();
 
-      if (!userRecord) return { error: "Usuario o contraseña incorrectos" };
-      if (userRecord.status !== 'active') return { error: "Cuenta desactivada." };
+      if (!userRecord) {
+        return { error: "Usuario o contraseña incorrectos" };
+      }
+      
+      if (userRecord.status !== 'active') {
+        return { error: "Cuenta desactivada." };
+      }
 
       const isValid = await verifyPassword(password, userRecord.password_hash as string);
+      
       if (!isValid) return { error: "Usuario o contraseña incorrectos" };
 
       const token = await createSession(userRecord.id as string, userRecord.role as string, userRecord.employee_number as string);
