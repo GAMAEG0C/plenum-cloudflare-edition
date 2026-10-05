@@ -1,5 +1,4 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { createFileRoute } from '@tanstack/react-start'
 import { getDebugInfo } from '@/server/debug.actions'
 import { useQuery } from '@tanstack/react-query'
 
