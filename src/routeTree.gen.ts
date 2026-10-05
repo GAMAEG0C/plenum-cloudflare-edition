@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as DebugRouteImport } from './routes/debug'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
@@ -42,6 +43,11 @@ import { Route as AppPacientesIdRouteImport } from './routes/app.pacientes.$id'
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DebugRoute = DebugRouteImport.update({
+  id: '/debug',
+  path: '/debug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRoute = AppRouteImport.update({
@@ -188,6 +194,7 @@ const AppPacientesIdRoute = AppPacientesIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
+  '/debug': typeof DebugRoute
   '/login': typeof LoginRoute
   '/app/activos': typeof AppActivosRoute
   '/app/agenda': typeof AppAgendaRoute
@@ -218,6 +225,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/debug': typeof DebugRoute
   '/login': typeof LoginRoute
   '/app/activos': typeof AppActivosRoute
   '/app/agenda': typeof AppAgendaRoute
@@ -249,6 +257,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
+  '/debug': typeof DebugRoute
   '/login': typeof LoginRoute
   '/app/activos': typeof AppActivosRoute
   '/app/agenda': typeof AppAgendaRoute
@@ -282,6 +291,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/app'
+    | '/debug'
     | '/login'
     | '/app/activos'
     | '/app/agenda'
@@ -312,6 +322,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/debug'
     | '/login'
     | '/app/activos'
     | '/app/agenda'
@@ -342,6 +353,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/app'
+    | '/debug'
     | '/login'
     | '/app/activos'
     | '/app/agenda'
@@ -374,6 +386,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
+  DebugRoute: typeof DebugRoute
   LoginRoute: typeof LoginRoute
 }
 
@@ -384,6 +397,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/debug': {
+      id: '/debug'
+      path: '/debug'
+      fullPath: '/debug'
+      preLoaderRoute: typeof DebugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app': {
@@ -658,6 +678,7 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
+  DebugRoute: DebugRoute,
   LoginRoute: LoginRoute,
 }
 export const routeTree = rootRouteImport
